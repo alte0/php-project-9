@@ -34,16 +34,20 @@ $app->add(TwigMiddleware::create($app, $container->get(Twig::class)));
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
-$router = $app->getRouteCollector()->getRouteParser();
-
 $app->get('/', function (Request $request, Response $response, $args) {
-    $viewData = [
-        'title' => 'wefwefwe',
-    ];
+    $viewData = [];
 
     $twig = $this->get(Twig::class);
 
     return $twig->render($response, 'index.twig', $viewData);
 })->setName('index');
+
+$app->get('/urls', function (Request $request, Response $response, $args) {
+    $viewData = [];
+
+    $twig = $this->get(Twig::class);
+
+    return $twig->render($response, 'urls.twig', $viewData);
+})->setName('urls');
 
 $app->run();
