@@ -4,5 +4,6 @@ logs
 *.swp
 *.cache
 build
+cache/*
 .phpunit.cache
 .idea
