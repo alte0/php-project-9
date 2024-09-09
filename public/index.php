@@ -18,12 +18,11 @@ $container = new Container();
         ]
     );
 });*/
-$container->set(Twig::class, function() {
+$container->set(Twig::class, function () {
     return Twig::create(
         __DIR__ . '/../templates',
         [
-//            'cache' => '/../cache/twig'
-            'cache' => false
+            'cache' => false // '/../cache/twig'
         ]
     );
 });
