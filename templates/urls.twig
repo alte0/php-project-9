@@ -16,6 +16,16 @@
                 </tr>
                 </thead>
                 <tbody>
+                {% for url in urls %}
+                    <tr>
+                        <td>{{ url.getId() }}</td>
+                        <td>
+                            <a href="{{ url_for('urls.show.id', { 'id': url.getId() }) }}">{{ url.getName() }}</a>
+                        </td>
+                        <td>{{ url.getCreateAt() }}</td>
+                        <td>{{ url.getCodeResponseLast() }}</td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>

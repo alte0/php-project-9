@@ -1,53 +1,166 @@
 <?php
 
+require __DIR__ . '/../vendor/autoload.php';
+
+use App\Url;
+use App\UrlValidator;
+use App\UrlRepository;
+use Carbon\Carbon;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use DI\Container;
+use Slim\Flash\Messages;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
+use Valitron\Validator;
+use Illuminate\Support\Arr;
 
-require __DIR__ . '/../vendor/autoload.php';
+Validator::lang('ru');
 
 $container = new Container();
-/*$container->set('renderer', function () {
-    return new \Slim\Views\PhpRenderer(
-        __DIR__ . '/../templates',
-        [
-            'title' => 'Анализатор страниц'
-        ]
-    );
-});*/
 $container->set(Twig::class, function () {
     return Twig::create(
         __DIR__ . '/../templates',
         [
-            'cache' => false // '/../cache/twig'
+            'cache' => false, // '/../cache/twig'
         ]
     );
 });
+$container->set('flash', function () {
+    $storage = [];
+
+    return new Messages($storage);
+});
+$container->set(\PDO::class, function () {
+    $databaseUrl = parse_url($_ENV['DATABASE_URL']);
+
+    $dbDrive = $databaseUrl['scheme'];
+    $username = $databaseUrl['user'];
+    $password = $databaseUrl['pass'];
+
+    $dsnArr = [];
+
+    if (\array_key_exists('path', $databaseUrl) && $databaseUrl['path']) {
+        $dsnArr[] = 'dbname=' . ltrim($databaseUrl['path'], '/');
+    }
+
+    if (\array_key_exists('host', $databaseUrl) && $databaseUrl['host']) {
+        $dsnArr[] = 'host=' . $databaseUrl['host'];
+    }
+
+    if (\array_key_exists('port', $databaseUrl) && $databaseUrl['port']) {
+        $dsnArr[] = 'port=' . $databaseUrl['port'];
+    } else {
+        $dsnArr[] = 'port=5432';
+    }
+
+    $dsn = "{$dbDrive}:" . \implode(';', $dsnArr);
+
+    $conn = new \PDO($dsn, $username, $password);
+    $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+
+    return $conn;
+});
 
 AppFactory::setContainer($container);
-
 $app = AppFactory::create();
+
 $app->add(TwigMiddleware::create($app, $container->get(Twig::class)));
+$app->add(
+    function ($request, $next) {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        $this->get('flash')->__construct($_SESSION);
+
+        return $next->handle($request);
+    }
+);
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
+$routeParser = $app->getRouteCollector()->getRouteParser();
+
 $app->get('/', function (Request $request, Response $response, $args) {
-    $viewData = [];
+    $messages = $this->get('flash')->getMessages();
 
-    $twig = $this->get(Twig::class);
+    $viewData = [
+        'urlError' => \array_key_exists('urlError', $messages) ? $messages['urlError'][0] : '',
+        'urlValue' => \array_key_exists('urlValue', $messages) ? $messages['urlValue'][0] : '',
+    ];
 
-    return $twig->render($response, 'index.twig', $viewData);
+    return $this->get(Twig::class)->render($response, 'index.twig', $viewData);
 })->setName('index');
 
+$app->get('/urls/{id}', function (Request $request, Response $response, $args) {
+    $id = (int)$args['id'];
+    $urlRepository = $this->get(UrlRepository::class);
+    $url = $urlRepository->find($id);
+
+    if ($url === null) {
+        return $this->get(Twig::class)->render($response->withStatus(404), '404.twig');
+    }
+
+    $successMsg = $this->get('flash')->getMessage('success');
+
+    $viewData = [
+        'successText' => \is_array($successMsg) && count($successMsg) > 0 ? \implode(' ', $successMsg) : '',
+        'url' => $url,
+        'checks' => []
+    ];
+
+    return $this->get(Twig::class)->render($response, 'url.twig', $viewData);
+})->setName('urls.show.id');
+
 $app->get('/urls', function (Request $request, Response $response, $args) {
-    $viewData = [];
+    $urlRepository = $this->get(UrlRepository::class);
+    $urls = $urlRepository->getEntities();
 
-    $twig = $this->get(Twig::class);
+    $viewData = [
+        'urls' => $urls,
+    ];
 
-    return $twig->render($response, 'urls.twig', $viewData);
-})->setName('urls');
+    return $this->get(Twig::class)->render($response, 'urls.twig', $viewData);
+})->setName('urls.show');
+
+$app->post('/urls', function (Request $request, Response $response, $args) use ($routeParser) {
+    $paramsForm = (array)$request->getParsedBody();
+    $fieldUrlName = 'url.name';
+    $urlValue = Arr::get($paramsForm, $fieldUrlName, '');
+    $urlValidator = new UrlValidator($paramsForm, $fieldUrlName);
+
+    if ($urlValidator->isHaveError()) {
+        $unprocessableEntityCode = 422;
+        $viewData = [
+            'urlError' => $urlValidator->getErrorText(),
+            'urlValue' => $urlValue,
+        ];
+        $newResponse = $response->withStatus($unprocessableEntityCode);
+
+        return $this->get(Twig::class)->render($newResponse, 'index.twig', $viewData);
+    }
+
+    $parseUrl = parse_url($urlValue);
+    $siteName = $parseUrl['scheme'] . '://' . $parseUrl['host'];
+    $createAt = Carbon::now()->format('Y-m-d H:m:s');
+
+    $urlRepository = $this->get(UrlRepository::class);
+    $urlFind = $urlRepository->findByName($siteName);
+
+    if (\get_class((object)$urlFind) === Url::class) {
+        $urlId = $urlFind->getId();
+    } else {
+        $url = Url::fromArray([$siteName, $createAt]);
+        $urlRepository->save($url);
+        $urlId = $url->getId();
+        $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
+    }
+
+    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $urlId]);
+
+    return $response->withHeader('Location', $urlRedirect)->withStatus(302);
+})->setName('urls.store');
 
 $app->run();
