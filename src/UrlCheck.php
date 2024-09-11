@@ -90,10 +90,10 @@ final class UrlCheck
 
     public function getCreateAtForHuman(): ?string
     {
-        $createAt = $this->getCreateAt();
+        $createdAt = $this->getCreatedAt();
 
-        if ($createAt !== null) {
-            return Carbon::parse($createAt)->format('Y-m-d H:i:s');
+        if ($createdAt !== null) {
+            return Carbon::parse($createdAt)->format('Y-m-d H:i:s');
         }
 
         return null;
