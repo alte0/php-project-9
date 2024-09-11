@@ -76,7 +76,8 @@ final class UrlCheckRepository
     private function update(UrlCheck $urlCheck): void
     {
         $sql = 'UPDATE url_checks 
-                SET status_code = :status_code, h1 = :h1, title = :title, description = :description, create_at = :create_at 
+                SET status_code = :status_code, h1 = :h1, title = :title, description = :description, 
+                    create_at = :create_at 
                 WHERE id = :id';
         $stmt = $this->conn->prepare($sql);
 
