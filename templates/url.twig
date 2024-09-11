@@ -19,16 +19,15 @@
                     </tr>
                     <tr>
                         <td>Дата создания</td>
-                        <td>{{ url.getCreateAt() }}</td>
+                        <td>{{ url.getCreateAtForHuman() }}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
         {% endif %}
         <h2 class="mt-5 mb-3">Проверки</h2>
-        <form class="pb-3" method="post" action="/urls/1/checks">
+        <form class="pb-3" method="post" action="{{ url_for('urls.checks.id', { id: url.getId() }) }}">
             <input type="submit" class="btn btn-primary" value="Запустить проверку">
-            {#            Страница успешно проверена #}
         </form>
         <table class="table table-bordered table-hover" data-test="checks">
             <thead>
@@ -44,12 +43,12 @@
             <tbody>
             {% for check in checks %}
                 <tr>
-                    <td>{{ check.id }}</td>
-                    <td>{{ check.code_response }}</td>
-                    <td class="text-break">{{ check.h1_text }}</td>
-                    <td class="text-break">{{ check.title_text }}</td>
-                    <td class="text-break">{{ check.description_text }}</td>
-                    <td>{{ check.create_at }}</td>
+                    <td>{{ check.getId() }}</td>
+                    <td>{{ check.getStatusCode() }}</td>
+                    <td class="text-break">{{ check.getH1() }}</td>
+                    <td class="text-break">{{ check.getTitle() }}</td>
+                    <td class="text-break">{{ check.getDescription() }}</td>
+                    <td>{{ check.getCreateAtForHuman() }}</td>
                 </tr>
             {% endfor %}
             </tbody>

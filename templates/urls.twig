@@ -22,8 +22,8 @@
                         <td>
                             <a href="{{ url_for('urls.show.id', { 'id': url.getId() }) }}">{{ url.getName() }}</a>
                         </td>
-                        <td>{{ url.getCreateAt() }}</td>
-                        <td>{{ url.getCodeResponseLast() }}</td>
+                        <td>{{ url.getLastCheckAtForHuman() }}</td>
+                        <td>{{ url.getStatusCode() }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

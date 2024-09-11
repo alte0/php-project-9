@@ -3,6 +3,8 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use App\Url;
+use App\UrlCheck;
+use App\UrlCheckRepository;
 use App\UrlValidator;
 use App\UrlRepository;
 use Carbon\Carbon;
@@ -83,7 +85,7 @@ $app->addErrorMiddleware(true, true, true);
 
 $routeParser = $app->getRouteCollector()->getRouteParser();
 
-$app->get('/', function (Request $request, Response $response, $args) {
+$app->get('/', function (Request $request, Response $response) {
     $messages = $this->get('flash')->getMessages();
 
     $viewData = [
@@ -104,19 +106,21 @@ $app->get('/urls/{id}', function (Request $request, Response $response, $args) {
     }
 
     $successMsg = $this->get('flash')->getMessage('success');
+    $UrlCheckRepository = $this->get(UrlCheckRepository::class);
+    $checks = $UrlCheckRepository->findByUrlId($id);
 
     $viewData = [
         'successText' => \is_array($successMsg) && count($successMsg) > 0 ? \implode(' ', $successMsg) : '',
         'url' => $url,
-        'checks' => []
+        'checks' => $checks,
     ];
 
     return $this->get(Twig::class)->render($response, 'url.twig', $viewData);
 })->setName('urls.show.id');
 
-$app->get('/urls', function (Request $request, Response $response, $args) {
+$app->get('/urls', function (Request $request, Response $response) {
     $urlRepository = $this->get(UrlRepository::class);
-    $urls = $urlRepository->getEntities();
+    $urls = $urlRepository->getEntitiesWithLastCheck();
 
     $viewData = [
         'urls' => $urls,
@@ -125,7 +129,24 @@ $app->get('/urls', function (Request $request, Response $response, $args) {
     return $this->get(Twig::class)->render($response, 'urls.twig', $viewData);
 })->setName('urls.show');
 
-$app->post('/urls', function (Request $request, Response $response, $args) use ($routeParser) {
+$app->post('/urls/{id}/checks', function (Request $request, Response $response, $args) use ($routeParser) {
+    $id = (int)$args['id'];
+    $createAt = Carbon::now('UTC')->format('Y-m-d H:m:s');
+    $urlCheck = UrlCheck::fromArray([$id, null, null, null, $createAt, null]);
+
+    $UrlCheckRepository = $this->get(UrlCheckRepository::class);
+    $UrlCheckRepository->save($urlCheck);
+
+    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $id]);
+
+    if ($urlCheck->getId() > 0) {
+        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+    }
+
+    return $response->withHeader('Location', $urlRedirect)->withStatus(302);
+})->setName('urls.checks.id');
+
+$app->post('/urls', function (Request $request, Response $response) use ($routeParser) {
     $paramsForm = (array)$request->getParsedBody();
     $fieldUrlName = 'url.name';
     $urlValue = Arr::get($paramsForm, $fieldUrlName, '');
@@ -144,7 +165,7 @@ $app->post('/urls', function (Request $request, Response $response, $args) use (
 
     $parseUrl = parse_url($urlValue);
     $siteName = $parseUrl['scheme'] . '://' . $parseUrl['host'];
-    $createAt = Carbon::now()->format('Y-m-d H:m:s');
+    $createAt = Carbon::now('UTC')->format('Y-m-d H:m:s');
 
     $urlRepository = $this->get(UrlRepository::class);
     $urlFind = $urlRepository->findByName($siteName);

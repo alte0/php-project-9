@@ -26,9 +26,30 @@ final class UrlRepository
         return $urls;
     }
 
+    public function getEntitiesWithLastCheck(): array
+    {
+        $urls = [];
+        $sql = 'SELECT urls.*, url_checks.* FROM urls 
+                LEFT JOIN (
+                    SELECT url_id, MAX(created_at) AS last_check_at, status_code FROM url_checks 
+                    GROUP BY url_id, status_code
+                ) as url_checks 
+                    ON urls.id = url_checks.url_id
+                ORDER BY id desc';
+        $stmt = $this->conn->query($sql);
+
+        while ($row = $stmt->fetch()) {
+            $url = Url::fromArray([$row['name'], $row['created_at'], $row['last_check_at'], $row['status_code']]);
+            $url->setId($row['id']);
+            $urls[] = $url;
+        }
+
+        return $urls;
+    }
+
     public function find(int $id): ?Url
     {
-        $sql = "SELECT * FROM urls WHERE id = ?";
+        $sql = 'SELECT * FROM urls WHERE id = ?';
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$id]);
 
@@ -44,7 +65,7 @@ final class UrlRepository
 
     public function findByName(string $name): ?Url
     {
-        $sql = "SELECT * FROM urls WHERE name LIKE ?";
+        $sql = 'SELECT * FROM urls WHERE name LIKE ?';
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([$name]);
 
@@ -69,7 +90,7 @@ final class UrlRepository
 
     private function update(Url $url): void
     {
-        $sql = "UPDATE urls SET name = :name, create_at = :create_at WHERE id = :id";
+        $sql = 'UPDATE urls SET name = :name, create_at = :create_at WHERE id = :id';
         $stmt = $this->conn->prepare($sql);
         $id = $url->getId();
         $name = $url->getName();
@@ -82,7 +103,7 @@ final class UrlRepository
 
     private function create(Url $url): void
     {
-        $sql = "INSERT INTO urls (name, create_at) VALUES (:name, :create_at) RETURNING id";
+        $sql = 'INSERT INTO urls (name, create_at) VALUES (:name, :create_at)';
         $stmt = $this->conn->prepare($sql);
         $name = $url->getName();
         $create_at = $url->getCreateAt();
