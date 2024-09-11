@@ -8,6 +8,7 @@ use App\UrlCheckRepository;
 use App\UrlValidator;
 use App\UrlRepository;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
@@ -131,19 +132,35 @@ $app->get('/urls', function (Request $request, Response $response) {
 
 $app->post('/urls/{id}/checks', function (Request $request, Response $response, $args) use ($routeParser) {
     $id = (int)$args['id'];
+    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $id]);
+    $urlRepository = $this->get(UrlRepository::class);
+    $url = $urlRepository->find($id);
+    $statusCode = null;
+    $h1 = null;
+    $title = null;
+    $description = null;
+    $newResponse = $response->withHeader('Location', $urlRedirect)->withStatus(302);
+
+    try {
+        $client = new Client();
+        $paramsRequest = ['connect_timeout' => 0.5];
+        $responseClient = $client->request('GET', $url->getName(), $paramsRequest);
+        $statusCode = $responseClient->getStatusCode();
+    } catch (Exception $e) {
+        return $newResponse;
+    }
+
     $createAt = Carbon::now('UTC')->format('Y-m-d H:m:s');
-    $urlCheck = UrlCheck::fromArray([$id, null, null, null, $createAt, null]);
+    $urlCheck = UrlCheck::fromArray([$id, $statusCode, $h1, $title, $createAt, $description]);
 
     $UrlCheckRepository = $this->get(UrlCheckRepository::class);
     $UrlCheckRepository->save($urlCheck);
-
-    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $id]);
 
     if ($urlCheck->getId() > 0) {
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
     }
 
-    return $response->withHeader('Location', $urlRedirect)->withStatus(302);
+    return $newResponse;
 })->setName('urls.checks.id');
 
 $app->post('/urls', function (Request $request, Response $response) use ($routeParser) {

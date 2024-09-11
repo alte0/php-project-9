@@ -20,7 +20,8 @@
         "vlucas/valitron": "^1.4",
         "nesbot/carbon": "^2.72",
         "slim/flash": "^0.4.0",
-        "illuminate/support": "^8.83"
+        "illuminate/support": "^8.83",
+        "guzzlehttp/guzzle": "^7.9"
     },
     "scripts": {
         "phpcs": "phpcs --standard=PSR12",

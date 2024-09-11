@@ -32,6 +32,7 @@ final class UrlRepository
         $sql = 'SELECT urls.*, url_checks.* FROM urls 
                 LEFT JOIN (
                     SELECT url_id, MAX(created_at) AS last_check_at, status_code FROM url_checks 
+                        where status_code is not null 
                     GROUP BY url_id, status_code
                 ) as url_checks 
                     ON urls.id = url_checks.url_id
