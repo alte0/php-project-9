@@ -1,7 +1,3 @@
--- DROP SCHEMA public;
-
-CREATE SCHEMA public AUTHORIZATION db_urls_user;
-
 -- DROP ROLE db_urls_user;
 
 CREATE ROLE db_urls_user WITH
@@ -13,6 +9,11 @@ CREATE ROLE db_urls_user WITH
     NOREPLICATION
     NOBYPASSRLS
     CONNECTION LIMIT -1;
+
+-- DROP SCHEMA public;
+
+CREATE SCHEMA public AUTHORIZATION db_urls_user;
+
 
 COMMENT ON SCHEMA public IS 'standard public schema';
 
