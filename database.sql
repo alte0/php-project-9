@@ -2,6 +2,18 @@
 
 CREATE SCHEMA public AUTHORIZATION db_urls_user;
 
+-- DROP ROLE db_urls_user;
+
+CREATE ROLE db_urls_user WITH
+    NOSUPERUSER
+    CREATEDB
+    CREATEROLE
+    INHERIT
+    LOGIN
+    NOREPLICATION
+    NOBYPASSRLS
+    CONNECTION LIMIT -1;
+
 COMMENT ON SCHEMA public IS 'standard public schema';
 
 -- DROP SEQUENCE public.checks_id_seq;
