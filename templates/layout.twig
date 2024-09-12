@@ -47,12 +47,6 @@
 {% if successText %}
     <div class="alert alert-success" role="alert">{{ successText }}</div>
 {% endif %}
-{% if successPageAdd %}
-    <div class="alert alert-success" role="alert">Страница успешно добавлена</div>
-{% endif %}
-{% if successChecked %}
-    <div class="alert alert-success" role="alert">Страница успешно проверена</div>
-{% endif %}
 <main class="flex-grow-1">
     {% block content %}
     {% endblock %}
