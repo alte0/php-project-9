@@ -190,7 +190,7 @@ $app->post('/urls/{id}/checks', function (Request $request, Response $response, 
 $app->post('/urls', function (Request $request, Response $response) use ($routeParser) {
     $paramsForm = (array)$request->getParsedBody();
     $fieldUrlName = 'url.name';
-    $urlValue = Arr::get($paramsForm, $fieldUrlName, '');
+    $urlValue = \trim(Arr::get($paramsForm, $fieldUrlName, ''));
     $urlValidator = new UrlValidator($paramsForm, $fieldUrlName);
 
     if ($urlValidator->isHaveError()) {
