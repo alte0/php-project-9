@@ -215,7 +215,7 @@ $app->post('/urls', function (Request $request, Response $response) use ($routeP
         $urlId = $urlFind->getId();
         $this->get('flash')->addMessage('success', 'Страница уже существует');
     } else {
-        $url = Url::fromArray([$siteName, $createAt]);
+        $url = Url::fromArray([$siteName, $createAt, null, null]);
         $urlRepository->save($url);
         $urlId = $url->getId();
         $this->get('flash')->addMessage('success', 'Страница успешно добавлена');

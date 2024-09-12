@@ -12,6 +12,10 @@ final class Url
     private ?string $lastCheckAt = null;
     private ?int $statusCode = null;
 
+    /** $name, $createAt, $lastCheckAt, $statusCode
+     * @param array $urlData
+     * @return self
+     */
     public static function fromArray(array $urlData): self
     {
         [$name, $createAt, $lastCheckAt, $statusCode] = $urlData;
