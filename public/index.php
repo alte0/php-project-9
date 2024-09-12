@@ -8,7 +8,8 @@ use App\UrlCheckRepository;
 use App\UrlValidator;
 use App\UrlRepository;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
+use DiDom\Document;
+use GuzzleHttp\Client as ClientGuzzle;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
@@ -142,10 +143,33 @@ $app->post('/urls/{id}/checks', function (Request $request, Response $response, 
     $newResponse = $response->withHeader('Location', $urlRedirect)->withStatus(302);
 
     try {
-        $client = new Client();
+        $clientGuzzle = new ClientGuzzle();
         $paramsRequest = ['connect_timeout' => 0.5];
-        $responseClient = $client->request('GET', $url->getName(), $paramsRequest);
+        $responseClient = $clientGuzzle->request('GET', $url->getName(), $paramsRequest);
         $statusCode = $responseClient->getStatusCode();
+
+        if ($statusCode === 200) {
+            $html = $responseClient->getBody()->getContents();
+            $document = new Document($html);
+            unset($html);
+            $htmlH1 = $document->find('h1');
+            $htmlTitle = $document->find('title');
+            $htmlDesc = $document->find('meta[name="description"]');
+
+            if (count($htmlH1) > 0) {
+                $h1 = $htmlH1[0]->text();
+            }
+
+            if (count($htmlTitle) > 0) {
+                $title = $htmlTitle[0]->text();
+            }
+
+            if (count($htmlDesc) > 0) {
+                $description = $htmlDesc[0]->attr('content');
+            }
+
+            unset($document);
+        }
     } catch (Exception $e) {
         return $newResponse;
     }
