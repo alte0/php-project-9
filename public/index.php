@@ -59,7 +59,7 @@ $container->set(\PDO::class, function () {
         $dsnArr[] = 'port=5432';
     }
 
-    $dsn = "{$dbDrive}:" . \implode(';', $dsnArr);
+    $dsn = "pgsql:" . \implode(';', $dsnArr);
 
     $conn = new \PDO($dsn, $username, $password);
     $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
