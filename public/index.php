@@ -213,6 +213,7 @@ $app->post('/urls', function (Request $request, Response $response) use ($routeP
 
     if (\get_class((object)$urlFind) === Url::class) {
         $urlId = $urlFind->getId();
+        $this->get('flash')->addMessage('success', 'Страница уже существует');
     } else {
         $url = Url::fromArray([$siteName, $createAt]);
         $urlRepository->save($url);
