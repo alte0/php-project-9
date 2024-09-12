@@ -17,10 +17,12 @@ final class UrlRepository
         $sql = "SELECT * FROM urls ORDER BY id DESC";
         $stmt = $this->conn->query($sql);
 
-        while ($row = $stmt->fetch()) {
-            $url = Url::fromArray([$row['name'], $row['create_at'], null, null]);
-            $url->setId($row['id']);
-            $urls[] = $url;
+        if ($stmt !== false) {
+            while ($row = $stmt->fetch()) {
+                $url = Url::fromArray([$row['name'], $row['create_at'], null, null]);
+                $url->setId($row['id']);
+                $urls[] = $url;
+            }
         }
 
         return $urls;
@@ -39,10 +41,12 @@ final class UrlRepository
                 ORDER BY id desc';
         $stmt = $this->conn->query($sql);
 
-        while ($row = $stmt->fetch()) {
-            $url = Url::fromArray([$row['name'], $row['created_at'], $row['last_check_at'], $row['status_code']]);
-            $url->setId($row['id']);
-            $urls[] = $url;
+        if ($stmt !== false) {
+            while ($row = $stmt->fetch()) {
+                $url = Url::fromArray([$row['name'], $row['created_at'], $row['last_check_at'], $row['status_code']]);
+                $url->setId($row['id']);
+                $urls[] = $url;
+            }
         }
 
         return $urls;

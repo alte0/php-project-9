@@ -11,6 +11,8 @@ install:
 
 lint:
 	composer exec --verbose phpcs -- --standard=PSR12 src public
+stan:
+	composer phpstan
 ##########################################################
 # Управление контейнерами с помощью docker compose (dc)
 ##########################################################

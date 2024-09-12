@@ -37,11 +37,12 @@ $container->set('flash', function () {
     return new Messages($storage);
 });
 $container->set(\PDO::class, function () {
-    $databaseUrl = parse_url($_ENV['DATABASE_URL']);
+    $databaseUrl = (array)\parse_url($_ENV['DATABASE_URL']);
 
-    $dbDrive = $databaseUrl['scheme'];
-    $username = $databaseUrl['user'];
-    $password = $databaseUrl['pass'];
+//    $dbDrive = $databaseUrl['scheme'] ?? 'pgsql';
+    $dbDrive = 'pgsql';
+    $username = $databaseUrl['user'] ?? '';
+    $password = $databaseUrl['pass'] ?? '';
 
     $dsnArr = [];
 
@@ -59,7 +60,7 @@ $container->set(\PDO::class, function () {
         $dsnArr[] = 'port=5432';
     }
 
-    $dsn = "pgsql:" . \implode(';', $dsnArr);
+    $dsn = $dbDrive . ':' . \implode(';', $dsnArr);
 
     $conn = new \PDO($dsn, $username, $password);
     $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
@@ -133,7 +134,7 @@ $app->get('/urls', function (Request $request, Response $response) {
 
 $app->post('/urls/{id}/checks', function (Request $request, Response $response, $args) use ($routeParser) {
     $id = (int)$args['id'];
-    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $id]);
+    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => (string)$id]);
     $urlRepository = $this->get(UrlRepository::class);
     $url = $urlRepository->find($id);
     $statusCode = null;
@@ -144,7 +145,10 @@ $app->post('/urls/{id}/checks', function (Request $request, Response $response, 
 
     try {
         $clientGuzzle = new ClientGuzzle();
-        $paramsRequest = ['connect_timeout' => 0.5];
+        $paramsRequest = [
+            'timeout' => 2,
+            'connect_timeout' => 1.5
+        ];
         $responseClient = $clientGuzzle->request('GET', $url->getName(), $paramsRequest);
         $statusCode = $responseClient->getStatusCode();
 
@@ -157,15 +161,15 @@ $app->post('/urls/{id}/checks', function (Request $request, Response $response, 
             $htmlDesc = $document->find('meta[name="description"]');
 
             if (count($htmlH1) > 0) {
-                $h1 = $htmlH1[0]->text();
+                $h1 = optional($htmlH1[0])->text();
             }
 
             if (count($htmlTitle) > 0) {
-                $title = $htmlTitle[0]->text();
+                $title = optional($htmlTitle[0])->text();
             }
 
             if (count($htmlDesc) > 0) {
-                $description = $htmlDesc[0]->attr('content');
+                $description = optional($htmlDesc[0])->attr('content');
             }
 
             unset($document);
@@ -211,7 +215,7 @@ $app->post('/urls', function (Request $request, Response $response) use ($routeP
     $urlRepository = $this->get(UrlRepository::class);
     $urlFind = $urlRepository->findByName($siteName);
 
-    if (\get_class((object)$urlFind) === Url::class) {
+    if (\get_class((object)$urlFind) == Url::class) {
         $urlId = $urlFind->getId();
         $this->get('flash')->addMessage('success', 'Страница уже существует');
     } else {
@@ -221,7 +225,7 @@ $app->post('/urls', function (Request $request, Response $response) use ($routeP
         $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
     }
 
-    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => $urlId]);
+    $urlRedirect = $routeParser->urlFor('urls.show.id', ['id' => (string)$urlId]);
 
     return $response->withHeader('Location', $urlRedirect)->withStatus(302);
 })->setName('urls.store');

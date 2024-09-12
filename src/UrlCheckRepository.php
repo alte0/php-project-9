@@ -17,10 +17,12 @@ final class UrlCheckRepository
         $sql = 'SELECT * FROM url_checks ORDER BY id DESC';
         $stmt = $this->conn->query($sql);
 
-        while ($row = $stmt->fetch()) {
-            $url = UrlCheck::fromArray([$row['name'], $row['create_at']]);
-            $url->setId($row['id']);
-            $urls[] = $url;
+        if ($stmt !== false) {
+            while ($row = $stmt->fetch()) {
+                $url = UrlCheck::fromArray([$row['name'], $row['create_at']]);
+                $url->setId($row['id']);
+                $urls[] = $url;
+            }
         }
 
         return $urls;

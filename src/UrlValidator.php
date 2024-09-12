@@ -27,7 +27,11 @@ final class UrlValidator
      */
     private function setErrorText(string $fieldName): void
     {
-        $this->errorText = $this->v->errors()[$fieldName][0];
+        $error = $this->v->errors();
+
+        if (\is_array($error) && \array_key_exists($fieldName, $error)) {
+            $this->errorText = $error[$fieldName][0];
+        }
     }
 
     /** Проверка на наличие ошибки валидации
