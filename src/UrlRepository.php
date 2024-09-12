@@ -18,7 +18,7 @@ final class UrlRepository
         $stmt = $this->conn->query($sql);
 
         while ($row = $stmt->fetch()) {
-            $url = Url::fromArray([$row['name'], $row['create_at']]);
+            $url = Url::fromArray([$row['name'], $row['create_at'], null, null]);
             $url->setId($row['id']);
             $urls[] = $url;
         }
@@ -55,7 +55,7 @@ final class UrlRepository
         $stmt->execute([$id]);
 
         if ($row = $stmt->fetch()) {
-            $url = Url::fromArray([$row['name'], $row['create_at']]);
+            $url = Url::fromArray([$row['name'], $row['create_at'], null, null]);
             $url->setId($row['id']);
 
             return $url;
@@ -71,7 +71,7 @@ final class UrlRepository
         $stmt->execute([$name]);
 
         if ($row = $stmt->fetch()) {
-            $url = Url::fromArray([$row['name'], $row['create_at']]);
+            $url = Url::fromArray([$row['name'], $row['create_at'], null, null]);
             $url->setId($row['id']);
 
             return $url;
