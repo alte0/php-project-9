@@ -39,13 +39,13 @@ $container->set('flash', function () {
 $container->set(\PDO::class, function () {
     $databaseUrl = (array)\parse_url($_ENV['DATABASE_URL']);
 
-    switch ($databaseUrl['scheme']) {
-        case 'postgresql':
+    var_dump($databaseUrl);
+    if (\key_exists('scheme', $databaseUrl)) {
+        if ($databaseUrl['scheme'] === 'postgresql') {
             $dbDrive = 'pgsql';
-            break;
-        default:
-            $dbDrive = '';
-            break;
+        }
+    } else {
+        $dbDrive = 'pgsql';
     }
 
     $username = $databaseUrl['user'] ?? '';
