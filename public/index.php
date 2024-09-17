@@ -39,8 +39,15 @@ $container->set('flash', function () {
 $container->set(\PDO::class, function () {
     $databaseUrl = (array)\parse_url($_ENV['DATABASE_URL']);
 
-//    $dbDrive = $databaseUrl['scheme'] ?? 'pgsql';
-    $dbDrive = 'pgsql';
+    switch ($databaseUrl['scheme']) {
+        case 'postgresql':
+            $dbDrive = 'pgsql';
+            break;
+        default:
+            $dbDrive = '';
+            break;
+    }
+
     $username = $databaseUrl['user'] ?? '';
     $password = $databaseUrl['pass'] ?? '';
 
