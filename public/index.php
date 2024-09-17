@@ -94,7 +94,7 @@ $app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
 $routeParser = $app->getRouteCollector()->getRouteParser();
-
+// TODO надо бы вынести в controllers, но в задании этого нет.
 $app->get('/', function (Request $request, Response $response) {
     $messages = $this->get('flash')->getMessages();
 
